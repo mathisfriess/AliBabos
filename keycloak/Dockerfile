@@ -8,9 +8,11 @@ ENV KC_HOSTNAME_STRICT_HTTPS=false
 ENV KC_HTTP_ENABLED=true
 ENV KC_PROXY=edge
 ENV KC_HTTPS_REQUIRED=none
+ENV KC_HTTP_PORT=8090
 
 # Expose le port 8090
 EXPOSE 8090
 
 # Commande pour démarrer Keycloak
-CMD ["start"]
+# CMD ["start"]
+CMD ["kc.sh start --optimized"]
