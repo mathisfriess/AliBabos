@@ -16,18 +16,17 @@
 
     <build>
         <plugins>
-                <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.13.0</version>
-            <configuration>
-                <source>22</source>
-                <target>22</target>
-                <fork>true</fork>
-                <executable>${JAVA_HOME}/bin/javac</executable>
-            </configuration>
-        </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>22</source>
+                    <target>22</target>
+                    <fork>true</fork>
+                    <executable>javac</executable>
+                </configuration>
+            </plugin>
             <!-- Checkstyle -->
             <plugin>
             <groupId>org.apache.maven.plugins</groupId>
