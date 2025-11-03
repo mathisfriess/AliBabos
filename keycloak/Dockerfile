@@ -10,4 +10,5 @@ ENV KC_DB=postgres
 
 EXPOSE 8090
 
-CMD ["start", "--optimized"]
+CMD ["start"]
+# CMD ["start", "--optimized"]
