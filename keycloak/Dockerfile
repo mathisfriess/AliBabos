@@ -1,18 +1,16 @@
-version: '3.9'
+# Dockerfile pour Keycloak
+FROM quay.io/keycloak/keycloak:latest
 
-services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    restart: unless-stopped
-    ports: 
-    - "8090"
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: password
-      # KC_HOSTNAME: raspberrypi.tail47bd1e.ts.net
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_HTTP_ENABLED: true
-      KC_PROXY: edge
-      KC_HTTPS_REQUIRED: none
-    command: "start"
+ENV KC_BOOTSTRAP_ADMIN_USERNAME=admin
+ENV KC_BOOTSTRAP_ADMIN_PASSWORD=password
+ENV KC_HOSTNAME_STRICT=false
+ENV KC_HOSTNAME_STRICT_HTTPS=false
+ENV KC_HTTP_ENABLED=true
+ENV KC_PROXY=edge
+ENV KC_HTTPS_REQUIRED=none
+
+# Expose le port 8090
+EXPOSE 8090
+
+# Commande pour démarrer Keycloak
+CMD ["start"]
