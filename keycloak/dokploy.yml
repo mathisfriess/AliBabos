@@ -15,4 +15,5 @@ services:
       KC_HTTP_PORT: 8090
       KC_PROXY: edge
       KC_HTTP_ENABLED: true
-    command: ["start", "--optimized"]
+    command: ['start']
+    # command: ["start", "--optimized"]
