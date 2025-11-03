@@ -25,4 +25,5 @@ ENV KC_DB_URL_DATABASE=postgres
 EXPOSE 8090
 
 # Commande pour démarrer Keycloak
-CMD ["start", "--optimized"]
+CMD ["start"]
+# CMD ["start", "--optimized"]
