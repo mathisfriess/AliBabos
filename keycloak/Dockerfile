@@ -15,4 +15,4 @@ EXPOSE 8090
 
 # Commande pour démarrer Keycloak
 # CMD ["start"]
-CMD ["kc.sh start --optimized"]
+CMD ["kc.sh start"]
