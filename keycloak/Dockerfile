@@ -14,5 +14,5 @@ ENV KC_HTTP_PORT=8090
 EXPOSE 8090
 
 # Commande pour démarrer Keycloak
-# CMD ["start"]
-CMD ["kc.sh start"]
+CMD ["start"]
+# CMD ["kc.sh start --optimized"]
