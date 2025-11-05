@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { HeaderNotConnected } from "@/components/alibabos-ui/header";
 
 function Home() {
   const router = useRouter();
@@ -14,18 +15,7 @@ function Home() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="w-full bg-white/60 backdrop-blur-sm border-b border-black/10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-24">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-linear-to-b from-black to-emerald-200 rounded-full" />
-              <span className="text-lg font-medium text-neutral-800">
-                AliBabos
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <HeaderNotConnected />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-24">
