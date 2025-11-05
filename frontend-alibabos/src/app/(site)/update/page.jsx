@@ -1,7 +1,0 @@
-"use client";
-
-function UpdatePage() {
-  return <div>Update Page</div>;
-}
-
-export default UpdatePage;
