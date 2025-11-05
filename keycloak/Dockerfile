@@ -1,8 +1,35 @@
+# syntax=docker/dockerfile:1
+FROM quay.io/keycloak/keycloak:latest
 
-FROM quay.io/keycloak/keycloak:latest 
+# Build-time variables (définies dans Dokploy → Build variables)
+ARG KC_BOOTSTRAP_ADMIN_USERNAME
+ARG KC_BOOTSTRAP_ADMIN_PASSWORD
+ARG KC_HTTP_PORT
+ARG KC_DB
+ARG KC_DB_USERNAME
+ARG KC_DB_PASSWORD
+ARG KC_DB_URL_HOST
+ARG KC_DB_URL_PORT
+ARG KC_DB_URL_DATABASE
 
-# Expose le port 8090 
-EXPOSE 8090 
+# Variables runtime (injectées dans le conteneur)
+ENV KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+ENV KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD}
+ENV KC_HTTP_ENABLED=true
+ENV KC_HTTP_PORT=${KC_HTTP_PORT}
+ENV KC_HOSTNAME_STRICT=false
+ENV KC_HOSTNAME_STRICT_HTTPS=false
+ENV KC_PROXY=edge
+ENV KC_HTTPS_REQUIRED=none
+ENV KC_DB=${KC_DB}
+ENV KC_DB_USERNAME=${KC_DB_USERNAME}
+ENV KC_DB_PASSWORD=${KC_DB_PASSWORD}
+ENV KC_DB_URL_HOST=${KC_DB_URL_HOST}
+ENV KC_DB_URL_PORT=${KC_DB_URL_PORT}
+ENV KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE}
 
-# Commande pour démarrer Keycloak 
-CMD ["start"] 
+# Afficher l'heure pour rafraichir les caches
+RUN date
+
+EXPOSE ${KC_HTTP_PORT}
+CMD ["start"]
