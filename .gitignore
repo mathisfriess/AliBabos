@@ -4,6 +4,9 @@
 **/.env.*
 **/*.env
 
+/backend/BuilderService/application.properties
+
+
 ### IntelliJ IDEA ###
 .idea
 .idea/modules.xml
@@ -16,6 +19,7 @@
 
 ### vscode ###
 .vscode/
+application.properties
 
 ### maven ###
 
