@@ -1,6 +1,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 
+//TODO: Use a single component and apply login logic to switch between states
+
 export function HeaderNotConnected() {
   return (
     <header className="w-full bg-white/60 backdrop-blur-sm border-b border-black/10 shadow-sm">
