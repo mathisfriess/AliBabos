@@ -10,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeaderConnected } from "@/components/alibabos-ui/header";
 import { useRouter } from "next/navigation";
 import { sites, drafts } from "@/mockData/data";
+import { AuthGuard } from "../../lib/checkAuth"
+import {LogoutButton} from "@/components/ui/logout-button";
+
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState("published");
@@ -30,12 +33,15 @@ function ProfilePage() {
   };
 
   return (
+    <AuthGuard>
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-emerald-50/30">
       {/* Header */}
       <HeaderConnected />
 
       {/* Main Content */}
+
       <main className="max-w-7xl mx-auto px-8 py-12">
+        <LogoutButton />
         {/* Profile Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -148,6 +154,8 @@ function ProfilePage() {
         )}
       </main>
     </div>
+    
+    </AuthGuard>
   );
 }
 
