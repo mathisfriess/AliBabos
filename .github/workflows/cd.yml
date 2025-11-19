@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build \ -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest
       - name: Set up Kubeconfig
         run: |
