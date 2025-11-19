@@ -17,27 +17,47 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-        initKeycloak({
-          onLoad: "check-sso",
-          flow: "standard",
-          checkLoginIframe: false,
-        })
-          .then(async (authenticated) => {
-            if (!authenticated) {
-              router.push(redirectTo);
-            } else {
-              const kc = (
-                await import("@/config/keycloakConfig")
-              ).getKeycloak();
-              const userInfo = await kc?.loadUserInfo();
+    initKeycloak({
+      onLoad: "check-sso",
+      checkLoginIframe: false,
+      enableLogging: true,
+    })
+      .then(async (authenticated) => {
+        if (!authenticated) {
+          router.push(redirectTo);
+          setIsLoading(false);
+        } else {
+          try {
+            const kc = (await import("@/config/keycloakConfig")).getKeycloak();
+            
+            if (kc) {
+              const userInfo = (await kc.loadUserInfo()) as any;
               setIsAuthenticated(true);
-              if (userInfo) setUser(userInfo);
-              setIsLoading(false);
+              
+              if (userInfo) {
+                setUser({
+                  sub: userInfo.sub || "",
+                  email: userInfo.email,
+                  email_verified: userInfo.email_verified,
+                  preferred_username: userInfo.preferred_username,
+                  given_name: userInfo.given_name,
+                  family_name: userInfo.family_name,
+                });
+              }
             }
-          })
-          .catch(() => {
-            router.push(redirectTo);
-          });
+            
+            setIsLoading(false);
+          } catch (error) {
+            console.error("Error loading user info:", error);
+            setIsLoading(false);
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Keycloak init error:", error);
+        router.push(redirectTo);
+        setIsLoading(false);
+      });
   }, [router, redirectTo, setUser]);
 
   if (isLoading) {
