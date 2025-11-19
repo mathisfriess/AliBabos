@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import keycloak, { initKeycloak } from "../../../config/keycloakConfig";
+import { getKeycloak, initKeycloak } from "../../../config/keycloakConfig";
 
 function LoginPage() {
   useEffect(() => {
     initKeycloak()
       .then((authenticated) => {
+        const keycloak = getKeycloak();
         if (!authenticated) {
-          // Force login redirect
-          keycloak.login({
+          keycloak?.login({
             redirectUri: window.location.origin + "/profile",
           });
         } else {
-          // Already authenticated, just redirect
           window.location.href = "/profile";
         }
       })

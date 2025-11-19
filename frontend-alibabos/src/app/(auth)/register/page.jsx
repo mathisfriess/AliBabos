@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import keycloak, { initKeycloak } from "../../../config/keycloakConfig";
+import { getKeycloak, initKeycloak } from "../../../config/keycloakConfig";
 
 function RegisterPage() {
   useEffect(() => {
     initKeycloak()
       .then((authenticated) => {
+        const keycloak = getKeycloak();
         if (!authenticated) {
-          keycloak.register({
+          keycloak?.register({
             redirectUri: window.location.origin + "/profile",
           });
         } else {

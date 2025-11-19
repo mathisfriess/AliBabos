@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import keycloak, { initKeycloak } from "@/config/keycloakConfig";
+import { initKeycloak } from "@/config/keycloakConfig";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthGuardProps {
@@ -13,21 +13,19 @@ interface AuthGuardProps {
 export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    initKeycloak({
-      onLoad: "check-sso",
-      pkceMethod: "S256",
-    })
+    initKeycloak({ onLoad: "check-sso", pkceMethod: "S256" })
       .then(async (authenticated) => {
         if (!authenticated) {
           router.push(redirectTo);
         } else {
-          const userInfo = await keycloak.loadUserInfo();
+          const kc = (await import("@/config/keycloakConfig")).getKeycloak();
+          const userInfo = await kc?.loadUserInfo();
           setIsAuthenticated(true);
-          setUser(userInfo);
+          if (userInfo) setUser(userInfo);
           setIsLoading(false);
         }
       })
