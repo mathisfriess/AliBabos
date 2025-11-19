@@ -1,26 +1,32 @@
 import Keycloak from "keycloak-js";
 
-let keycloakInstance: Keycloak.KeycloakInstance | null = null;
-
-export const getKeycloak = () => {
-  if (!keycloakInstance && typeof window !== "undefined") {
-    keycloakInstance = new Keycloak({
-      url: process.env.NEXT_PUBLIC_KEYCLOAK_URL!,
-      realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM!,
-      clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID!,
-    });
-  }
-  return keycloakInstance;
+const keycloakConfig = {
+  url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || "http://localhost:7080",
+  realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM || "alibabos",
+  clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || "frontend-alibabos",
 };
+
+const keycloak = new Keycloak(keycloakConfig);
+
+let isInitialized = false;
 
 export const initKeycloak = async (config?: Keycloak.KeycloakInitOptions) => {
-  const kc = getKeycloak();
-  if (!kc) return false;
-  return kc.init(
-    config || {
-      onLoad: "check-sso",
-      checkLoginIframe: false,
-      enableLogging: true,
+  if (!isInitialized) {
+    try {
+      const authenticated = await keycloak.init(
+        config || {
+          onLoad: "check-sso",
+          pkceMethod: "S256",
+        }
+      );
+      isInitialized = true;
+      return authenticated;
+    } catch (error) {
+      console.error("Keycloak init failed:", error);
+      throw error;
     }
-  );
+  }
+  return keycloak.authenticated || false;
 };
+
+export default keycloak;
