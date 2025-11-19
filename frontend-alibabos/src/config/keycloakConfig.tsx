@@ -16,7 +16,6 @@ export const initKeycloak = async (config?: Keycloak.KeycloakInitOptions) => {
       const authenticated = await keycloak.init(
         config || {
           onLoad: "check-sso",
-          pkceMethod: "S256",
         }
       );
       isInitialized = true;

@@ -13,28 +13,27 @@ interface AuthGuardProps {
 export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { user, setUser } = useAuth();
+  // const { setUser } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     initKeycloak({
       onLoad: "check-sso",
-      pkceMethod: "S256",
     })
       .then(async (authenticated) => {
         if (!authenticated) {
           router.push(redirectTo);
         } else {
-          const userInfo = await keycloak.loadUserInfo();
+          // const userInfo = await keycloak.loadUserInfo();
           setIsAuthenticated(true);
-          setUser(userInfo);
+          // setUser(userInfo);
           setIsLoading(false);
         }
       })
       .catch(() => {
         router.push(redirectTo);
       });
-  }, [router, redirectTo, setUser]);
+  }, [router, redirectTo]);
 
   if (isLoading) {
     return (
