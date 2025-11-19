@@ -13,7 +13,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  // const { setUser } = useAuth();
+  const { setUser } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -24,16 +24,16 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
         if (!authenticated) {
           router.push(redirectTo);
         } else {
-          // const userInfo = await keycloak.loadUserInfo();
+          const userInfo = await keycloak.loadUserInfo();
           setIsAuthenticated(true);
-          // setUser(userInfo);
+          setUser(userInfo);
           setIsLoading(false);
         }
       })
       .catch(() => {
         router.push(redirectTo);
       });
-  }, [router, redirectTo]);
+  }, [router, redirectTo, setUser]);
 
   if (isLoading) {
     return (

@@ -1,3 +1,22 @@
+if (
+  typeof window !== "undefined" &&
+  (!window.crypto || !window.crypto.subtle)
+) {
+  (window as any).crypto = {
+    getRandomValues: function (buffer: Uint8Array) {
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] = Math.floor(Math.random() * 256);
+      }
+      return buffer;
+    },
+    subtle: {
+      digest: async function (algorithm: string, data: ArrayBuffer) {
+        return new Uint8Array(32).buffer;
+      },
+    },
+  };
+}
+
 import Keycloak from "keycloak-js";
 
 const keycloakConfig = {
