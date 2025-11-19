@@ -39,8 +39,11 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }} .
           docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }}
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest
+
       - name: Set up Kubeconfig
         run: |
           mkdir -p $HOME/.kube
@@ -48,5 +51,7 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/frontend-alibabos frontend-alibabos=${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest
+          kubectl set image deployment/frontend-alibabos frontend-alibabos=${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }}
+          kubectl rollout status deployment/frontend-alibabos
+          kubectl delete pods -l app=frontend-alibabos
           kubectl rollout status deployment/frontend-alibabos
