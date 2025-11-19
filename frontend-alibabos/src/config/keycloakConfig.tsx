@@ -15,11 +15,10 @@ export const getKeycloak = () => {
 
 export const initKeycloak = async (config?: Keycloak.KeycloakInitOptions) => {
   const kc = getKeycloak();
-  if (!kc) return false; // côté serveur
+  if (!kc) return false;
   return kc.init(
     config || {
       onLoad: "check-sso",
-      flow: "standard",
       checkLoginIframe: false,
       enableLogging: true,
     }
