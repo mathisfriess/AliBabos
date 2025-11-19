@@ -29,23 +29,30 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
         } else {
           try {
             const kc = (await import("@/config/keycloakConfig")).getKeycloak();
-            
+
             if (kc) {
-              const userInfo = (await kc.loadUserInfo()) as any;
+              const userInfo = (await kc.loadUserInfo()) as Record<
+                string,
+                unknown
+              >;
               setIsAuthenticated(true);
-              
-              if (userInfo) {
+
+              if (userInfo && typeof userInfo === "object") {
                 setUser({
-                  sub: userInfo.sub || "",
-                  email: userInfo.email,
-                  email_verified: userInfo.email_verified,
-                  preferred_username: userInfo.preferred_username,
-                  given_name: userInfo.given_name,
-                  family_name: userInfo.family_name,
+                  sub: (userInfo.sub as string) || "",
+                  email: userInfo.email as string | undefined,
+                  email_verified: userInfo.email_verified as
+                    | boolean
+                    | undefined,
+                  preferred_username: userInfo.preferred_username as
+                    | string
+                    | undefined,
+                  given_name: userInfo.given_name as string | undefined,
+                  family_name: userInfo.family_name as string | undefined,
                 });
               }
             }
-            
+
             setIsLoading(false);
           } catch (error) {
             console.error("Error loading user info:", error);
