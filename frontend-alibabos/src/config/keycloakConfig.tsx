@@ -16,5 +16,12 @@ export const getKeycloak = () => {
 export const initKeycloak = async (config?: Keycloak.KeycloakInitOptions) => {
   const kc = getKeycloak();
   if (!kc) return false; // côté serveur
-  return kc.init(config || { onLoad: "check-sso", pkceMethod: "S256" });
+  return kc.init(
+    config || {
+      onLoad: "check-sso",
+      flow: "standard",
+      checkLoginIframe: false,
+      enableLogging: true,
+    }
+  );
 };

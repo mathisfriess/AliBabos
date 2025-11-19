@@ -17,21 +17,27 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    initKeycloak({ onLoad: "check-sso", pkceMethod: "S256" })
-      .then(async (authenticated) => {
-        if (!authenticated) {
-          router.push(redirectTo);
-        } else {
-          const kc = (await import("@/config/keycloakConfig")).getKeycloak();
-          const userInfo = await kc?.loadUserInfo();
-          setIsAuthenticated(true);
-          if (userInfo) setUser(userInfo);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        router.push(redirectTo);
-      });
+        initKeycloak({
+          onLoad: "check-sso",
+          flow: "standard",
+          checkLoginIframe: false,
+        })
+          .then(async (authenticated) => {
+            if (!authenticated) {
+              router.push(redirectTo);
+            } else {
+              const kc = (
+                await import("@/config/keycloakConfig")
+              ).getKeycloak();
+              const userInfo = await kc?.loadUserInfo();
+              setIsAuthenticated(true);
+              if (userInfo) setUser(userInfo);
+              setIsLoading(false);
+            }
+          })
+          .catch(() => {
+            router.push(redirectTo);
+          });
   }, [router, redirectTo, setUser]);
 
   if (isLoading) {
