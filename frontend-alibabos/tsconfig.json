@@ -28,8 +28,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "src/app/(site)/create/page.tsx"  ],
-, "src/contexts/AuthContext.tsx"  ],
+    "**/*.mts",
+    "src/app/(site)/create/page.tsx",
+    "src/contexts/AuthContext.tsx"  
+  ],
   "exclude": ["node_modules"]
 }
