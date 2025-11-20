@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,13 +12,30 @@ import {
 import { HeaderConnected } from "@/components/alibabos-ui/header";
 import styles from "@/style/createPage.module.css";
 import Step1TemplateSelection from "@/components/create-page/createPagePart1";
+import Step2WebsiteName from "@/components/create-page/createPagePart2";
 
-interface Template {
-  id: string;
-  name: string;
-  category: string;
-  imageUrl: string;
-  isPopular?: boolean;
+interface Step1FormData {
+  selectedTemplate: string | null;
+}
+
+interface Step2FormData {
+  websiteName: string;
+  logoUrl?: string;
+  subdomain?: string;
+  completedAt?: string;
+}
+
+interface Step3FormData {
+  customization: {
+    primaryColor: string;
+    secondaryColor: string;
+    font: string;
+  };
+}
+
+interface Step4FormData {
+  // Adapt if needed later
+  confirmed: boolean;
 }
 
 interface FormData {
@@ -29,11 +46,11 @@ interface FormData {
     secondaryColor: string;
     font: string;
   };
-  // Add more step data as needed
-  step1Data: any; // Placeholder for step 1 specific data
-  step2Data: any; // Placeholder for step 2 specific data
-  step3Data: any; // Placeholder for step 3 specific data
-  step4Data: any; // Placeholder for step 4 specific data
+
+  step1Data: Step1FormData | null;
+  step2Data: Step2FormData | null;
+  step3Data: Step3FormData | null;
+  step4Data: Step4FormData | null;
 }
 
 const steps = [
@@ -60,19 +77,28 @@ function CreatePageTemplate() {
   });
 
   // Handler to receive data from child components
-  const handleStepDataChange = (stepNumber: number, data: any) => {
-    console.log(`Data from Step ${stepNumber}:`, data);
-    setFormData((prev) => ({
-      ...prev,
-      [`step${stepNumber}Data`]: data,
-      // Update specific form fields based on step
-      ...(stepNumber === 1 && { selectedTemplate: data?.selectedTemplate }),
-      ...(stepNumber === 2 && { siteName: data?.siteName }),
-      ...(stepNumber === 3 && {
-        customization: { ...prev.customization, ...data?.customization },
-      }),
-    }));
-  };
+  type StepData = Step1FormData | Step2FormData | Step3FormData | Step4FormData;
+  const handleStepDataChange = useCallback(
+    (stepNumber: number, data: StepData) => {
+      setFormData((prev) => ({
+        ...prev,
+        [`step${stepNumber}Data`]: data,
+        ...(stepNumber === 1 && {
+          selectedTemplate: (data as Step1FormData).selectedTemplate,
+        }),
+        ...(stepNumber === 2 && {
+          siteName: (data as Step2FormData).websiteName,
+        }),
+        ...(stepNumber === 3 && {
+          customization: {
+            ...prev.customization,
+            ...(data as Step3FormData).customization,
+          },
+        }),
+      }));
+    },
+    []
+  );
 
   const handleNext = () => {
     if (currentStep < 4 && canProceedToNextStep()) {
@@ -119,17 +145,24 @@ function CreatePageTemplate() {
         return (
           <Step1TemplateSelection
             onDataChange={(data) => handleStepDataChange(1, data)}
-            initialData={formData.step1Data}
+            initialData={formData.step1Data || undefined}
           />
         );
       case 2:
         return (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-medium text-gray-800 mb-4">
-              Step 2: Name Your Site
-            </h2>
-            <p className="text-gray-500">Coming soon...</p>
-          </div>
+          <Step2WebsiteName
+            onDataChange={(data) => handleStepDataChange(2, data)}
+            initialData={
+              formData.step2Data
+                ? {
+                    ...formData.step2Data,
+                    subdomain: formData.step2Data.subdomain ?? "",
+                    logoUrl: formData.step2Data.logoUrl ?? "",
+                    completedAt: formData.step2Data.completedAt ?? "",
+                  }
+                : undefined
+            }
+          />
         );
       case 3:
         return (
@@ -249,14 +282,6 @@ function CreatePageTemplate() {
           </nav>
         </div>
       </main>
-
-      {/* Debug Panel - Remove in production */}
-      <div className="fixed bottom-4 right-4 bg-black text-white p-4 rounded-lg text-xs max-w-sm">
-        <h3 className="font-semibold mb-2">Debug - Form Data:</h3>
-        <pre className="whitespace-pre-wrap overflow-auto max-h-32">
-          {JSON.stringify(formData, null, 2)}
-        </pre>
-      </div>
     </div>
   );
 }
