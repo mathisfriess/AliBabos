@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-alibabos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-alibabos
+  template:
+    metadata:
+      labels:
+        app: frontend-alibabos
+    spec:
+      containers:
+      - name: frontend-alibabos
+        image: zolangivre/frontend-alibabos:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_KEYCLOAK_URL
+          valueFrom:
+            secretKeyRef:
+              name: frontend-alibabos-env
+              key: NEXT_PUBLIC_KEYCLOAK_URL
+        - name: NEXT_PUBLIC_KEYCLOAK_REALM
+          valueFrom:
+            secretKeyRef:
+              name: frontend-alibabos-env
+              key: NEXT_PUBLIC_KEYCLOAK_REALM
+        - name: NEXT_PUBLIC_KEYCLOAK_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: frontend-alibabos-env
+              key: NEXT_PUBLIC_KEYCLOAK_CLIENT_ID

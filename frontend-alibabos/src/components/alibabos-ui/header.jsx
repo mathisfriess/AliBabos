@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
+import { useAuth } from "../../contexts/AuthContext";
+import { LogoutButton } from "@/components/ui/logout-button";
 
 //TODO: Use a single component and apply login logic to switch between states
 
@@ -24,6 +26,7 @@ export function HeaderNotConnected() {
 }
 
 export function HeaderConnected() {
+  const { user } = useAuth();
   return (
     <header className="bg-white/60 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
@@ -31,16 +34,19 @@ export function HeaderConnected() {
           href="/"
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="w-8 h-8 bg-gradient-to-b from-black to-emerald-200 rounded-full" />
+          <div className="w-8 h-8 bg-linear-to-b from-black to-emerald-200 rounded-full" />
           <span className="text-base font-medium text-gray-800">AliBabos</span>
         </Link>
-        <Link href="/profile">
-          <Avatar className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity">
-            <AvatarFallback className="bg-gradient-to-b from-black to-emerald-200 text-white">
-              J
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+        <nav className="flex items-center gap-4">
+          <Link href="/profile">
+            <Avatar className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity">
+              <AvatarFallback className="bg-linear-to-b from-black to-emerald-200 text-white">
+                {user?.name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <LogoutButton />
+        </nav>
       </div>
     </header>
   );
