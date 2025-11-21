@@ -13,6 +13,7 @@ import { HeaderConnected } from "@/components/alibabos-ui/header";
 import styles from "@/style/createPage.module.css";
 import Step1TemplateSelection from "@/components/create-page/createPagePart1";
 import Step2WebsiteName from "@/components/create-page/createPagePart2";
+import { AuthGuard } from "@/lib/checkAuth";
 
 interface Step1FormData {
   selectedTemplate: string | null;
@@ -188,101 +189,107 @@ function CreatePageTemplate() {
   };
 
   return (
-    <div className={styles.container}>
-      {/* Use existing header component */}
-      <HeaderConnected />
+    <AuthGuard>
+      <div className={styles.container}>
+        {/* Use existing header component */}
+        <HeaderConnected />
 
-      {/* Progress Bar Section */}
-      <section className={styles.progressBar}>
-        <div className={styles.progressContent}>
-          <div className={styles.progressHeader}>
-            <h1 className="text-base font-normal text-neutral-800">
-              Create Your Website
-            </h1>
-            <div className={styles.progressActions}>
-              <button
-                onClick={handleSaveDraft}
-                className={styles.saveDraftButton}
-              >
-                Save Draft
-              </button>
-              <button onClick={handleExit} className={styles.exitButton}>
-                Exit
-              </button>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className={styles.progressBarContainer}>
-            <div
-              className={styles.progressBarFill}
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-
-          {/* Steps */}
-          <nav className={styles.steps}>
-            {steps.map((step, index) => (
-              <div key={step.id} className={styles.step}>
-                <div className={styles.stepContent}>
-                  <div
-                    className={`${styles.stepIcon} ${
-                      currentStep === step.id
-                        ? styles.stepIconActive
-                        : styles.stepIconInactive
-                    }`}
-                  >
-                    <step.icon
-                      className="w-4 h-4"
-                      color={
-                        currentStep === step.id ? "white" : "rgb(120, 113, 108)"
-                      }
-                    />
-                  </div>
-                  <span
-                    className={`text-base font-normal ${
-                      currentStep === step.id ? "text-black" : "text-stone-500"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={styles.stepDivider} />
-                )}
+        {/* Progress Bar Section */}
+        <section className={styles.progressBar}>
+          <div className={styles.progressContent}>
+            <div className={styles.progressHeader}>
+              <h1 className="text-base font-normal text-neutral-800">
+                Create Your Website
+              </h1>
+              <div className={styles.progressActions}>
+                <button
+                  onClick={handleSaveDraft}
+                  className={styles.saveDraftButton}
+                >
+                  Save Draft
+                </button>
+                <button onClick={handleExit} className={styles.exitButton}>
+                  Exit
+                </button>
               </div>
-            ))}
-          </nav>
-        </div>
-      </section>
+            </div>
 
-      {/* Main Content - Dynamic Step Rendering */}
-      <main className={styles.mainContent}>
-        <div className={styles.contentInner}>
-          {renderCurrentStep()}
+            {/* Progress Bar */}
+            <div className={styles.progressBarContainer}>
+              <div
+                className={styles.progressBarFill}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
 
-          {/* Navigation Buttons */}
-          <nav className={styles.navigationButtons}>
-            <button
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-              className={`${styles.navButton} ${styles.prevButton}`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={currentStep === 4 || !canProceedToNextStep()}
-              className={`${styles.navButton} ${styles.nextButton}`}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </nav>
-        </div>
-      </main>
-    </div>
+            {/* Steps */}
+            <nav className={styles.steps}>
+              {steps.map((step, index) => (
+                <div key={step.id} className={styles.step}>
+                  <div className={styles.stepContent}>
+                    <div
+                      className={`${styles.stepIcon} ${
+                        currentStep === step.id
+                          ? styles.stepIconActive
+                          : styles.stepIconInactive
+                      }`}
+                    >
+                      <step.icon
+                        className="w-4 h-4"
+                        color={
+                          currentStep === step.id
+                            ? "white"
+                            : "rgb(120, 113, 108)"
+                        }
+                      />
+                    </div>
+                    <span
+                      className={`text-base font-normal ${
+                        currentStep === step.id
+                          ? "text-black"
+                          : "text-stone-500"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={styles.stepDivider} />
+                  )}
+                </div>
+              ))}
+            </nav>
+          </div>
+        </section>
+
+        {/* Main Content - Dynamic Step Rendering */}
+        <main className={styles.mainContent}>
+          <div className={styles.contentInner}>
+            {renderCurrentStep()}
+
+            {/* Navigation Buttons */}
+            <nav className={styles.navigationButtons}>
+              <button
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                className={`${styles.navButton} ${styles.prevButton}`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={currentStep === 4 || !canProceedToNextStep()}
+                className={`${styles.navButton} ${styles.nextButton}`}
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }
 
