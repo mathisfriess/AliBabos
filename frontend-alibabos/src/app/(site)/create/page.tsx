@@ -15,9 +15,13 @@ import Step1TemplateSelection from "@/components/create-page/createPagePart1";
 import Step2WebsiteName from "@/components/create-page/createPagePart2";
 import Step3ContentManagement from "@/components/create-page/createPagePart3";
 import { AuthGuard } from "@/lib/checkAuth";
+import Step4Preview from "@/components/create-page/createPagePart4";
 
 interface Step1FormData {
   selectedTemplate: string | null;
+  selectedTemplateName?: string;
+  selectedTemplateCategory?: string;
+  extraInfo?: string;
 }
 
 interface Step2FormData {
@@ -27,10 +31,16 @@ interface Step2FormData {
   completedAt?: string;
 }
 
+interface ContentBlock {
+  id: string;
+  type: "text" | "image";
+  content: string;
+}
+
 interface ContentSection {
   id: string;
-  type: string;
-  content: string;
+  layout: "single" | "split";
+  blocks: ContentBlock[];
 }
 
 interface Step3FormData {
@@ -83,7 +93,6 @@ function CreatePageTemplate() {
     step4Data: null,
   });
 
-  // Handler to receive data from child components
   type StepData = Step1FormData | Step2FormData | Step3FormData | Step4FormData;
   const handleStepDataChange = useCallback(
     (stepNumber: number, data: StepData) => {
@@ -107,6 +116,15 @@ function CreatePageTemplate() {
     },
     []
   );
+
+  const handlePublish = () => {
+    console.log("Publishing site...", {
+      template: formData.step1Data?.selectedTemplateName,
+      siteName: formData.siteName,
+      font: formData.customization.font,
+      sections: formData.sections,
+    });
+  };
 
   const handleNext = () => {
     if (currentStep < 4 && canProceedToNextStep()) {
@@ -177,111 +195,133 @@ function CreatePageTemplate() {
             initialData={formData.step3Data || undefined}
           />
         );
+      // ...existing code...
       case 4:
+        const buildData = {
+          siteName: formData.siteName,
+          template: formData.step1Data
+            ? {
+                id: formData.step1Data.selectedTemplate || "",
+                name: formData.step1Data.selectedTemplateName || "",
+                category: formData.step1Data.selectedTemplateCategory,
+              }
+            : undefined,
+          fontFamily: formData.customization.font,
+          sections: formData.sections,
+          primaryColor: formData.customization.primaryColor,
+          secondaryColor: formData.customization.secondaryColor,
+        };
         return (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-medium text-gray-800 mb-4">
-              Step 4: Preview
-            </h2>
-            <p className="text-gray-500">Coming soon...</p>
-          </div>
+          <Step4Preview
+            templateName={formData.step1Data?.selectedTemplateName}
+            siteName={formData.siteName}
+            fontFamily={formData.customization.font}
+            buildData={buildData}
+            onPublish={handlePublish}
+          />
         );
+      // ...existing code...
       default:
         return null;
     }
   };
 
   return (
-    // <AuthGuard>
-    <div className={styles.container}>
-      <HeaderConnected />
+    <AuthGuard>
+      <div className={styles.container}>
+        <HeaderConnected />
 
-      <section className={styles.progressBar}>
-        <div className={styles.progressContent}>
-          <div className={styles.progressHeader}>
-            <h1 className="text-base font-normal text-neutral-800">
-              Create Your Website
-            </h1>
-            <div className={styles.progressActions}>
-              <button
-                onClick={handleSaveDraft}
-                className={styles.saveDraftButton}
-              >
-                Save Draft
-              </button>
-              <button onClick={handleExit} className={styles.exitButton}>
-                Exit
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.progressBarContainer}>
-            <div
-              className={styles.progressBarFill}
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-
-          <nav className={styles.steps}>
-            {steps.map((step, index) => (
-              <div key={step.id} className={styles.step}>
-                <div className={styles.stepContent}>
-                  <div
-                    className={`${styles.stepIcon} ${
-                      currentStep === step.id
-                        ? styles.stepIconActive
-                        : styles.stepIconInactive
-                    }`}
-                  >
-                    <step.icon
-                      className="w-4 h-4"
-                      color={
-                        currentStep === step.id ? "white" : "rgb(120, 113, 108)"
-                      }
-                    />
-                  </div>
-                  <span
-                    className={`text-base font-normal ${
-                      currentStep === step.id ? "text-black" : "text-stone-500"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={styles.stepDivider} />
-                )}
+        <section className={styles.progressBar}>
+          <div className={styles.progressContent}>
+            <div className={styles.progressHeader}>
+              <h1 className="text-base font-normal text-neutral-800">
+                Create Your Website
+              </h1>
+              <div className={styles.progressActions}>
+                <button
+                  onClick={handleSaveDraft}
+                  className={styles.saveDraftButton}
+                >
+                  Save Draft
+                </button>
+                <button onClick={handleExit} className={styles.exitButton}>
+                  Exit
+                </button>
               </div>
-            ))}
-          </nav>
-        </div>
-      </section>
+            </div>
 
-      <main className={styles.mainContent}>
-        <div className={styles.contentInner}>
-          {renderCurrentStep()}
+            <div className={styles.progressBarContainer}>
+              <div
+                className={styles.progressBarFill}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
 
-          <nav className={styles.navigationButtons}>
-            <button
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-              className={`${styles.navButton} ${styles.prevButton}`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={currentStep === 4 || !canProceedToNextStep()}
-              className={`${styles.navButton} ${styles.nextButton}`}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </nav>
-        </div>
-      </main>
-    </div>
+            <nav className={styles.steps}>
+              {steps.map((step, index) => (
+                <div key={step.id} className={styles.step}>
+                  <div className={styles.stepContent}>
+                    <div
+                      className={`${styles.stepIcon} ${
+                        currentStep === step.id
+                          ? styles.stepIconActive
+                          : styles.stepIconInactive
+                      }`}
+                    >
+                      <step.icon
+                        className="w-4 h-4"
+                        color={
+                          currentStep === step.id
+                            ? "white"
+                            : "rgb(120, 113, 108)"
+                        }
+                      />
+                    </div>
+                    <span
+                      className={`text-base font-normal ${
+                        currentStep === step.id
+                          ? "text-black"
+                          : "text-stone-500"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={styles.stepDivider} />
+                  )}
+                </div>
+              ))}
+            </nav>
+          </div>
+        </section>
+
+        <main className={styles.mainContent}>
+          <div className={styles.contentInner}>
+            {renderCurrentStep()}
+
+            <nav className={styles.navigationButtons}>
+              <button
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                className={`${styles.navButton} ${styles.prevButton}`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={currentStep === 4 || !canProceedToNextStep()}
+                className={`${styles.navButton} ${styles.nextButton}`}
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }
 
