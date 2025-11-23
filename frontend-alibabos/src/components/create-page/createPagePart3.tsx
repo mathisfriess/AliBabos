@@ -243,7 +243,7 @@ function Step3ContentManagement({ onDataChange, initialData }: Step3Props) {
             {sections.length === 0 ? (
               <div className={styles.emptyState}>
                 <p className={styles.emptyStateText}>
-                  No sections yet. Click "Add Section" to get started.
+                  No sections yet. Click &quot;Add Section&quot; to get started.
                 </p>
               </div>
             ) : (
