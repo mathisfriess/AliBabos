@@ -6,8 +6,8 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class HelloWorldController {
 
-    @QueryMapping
-    public String helloworld() {
-        return "Hello World!";
-    }
+  @QueryMapping
+  public String helloworld() {
+    return "Hello World!";
+  }
 }
