@@ -8,8 +8,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @EnableDiscoveryClient
 public class GraphqlGatewayApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(GraphqlGatewayApplication.class, args);
-    }
-
+  public static void main(String[] args) {
+    SpringApplication.run(GraphqlGatewayApplication.class, args);
+  }
 }

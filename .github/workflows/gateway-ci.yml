@@ -1,0 +1,42 @@
+name: GraphQL Gateway CI
+
+on:
+  push:
+    paths:
+      - 'backend/graphql-gateway/**'
+      - '.github/workflows/gateway-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/graphql-gateway/**'
+      - '.github/workflows/gateway-ci.yml'
+
+defaults:
+  run:
+    working-directory: backend/graphql-gateway
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Spotless Lint code
+        run: mvn spotless:check
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and run tests
+        run: mvn -B clean verify
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateway-test-reports
+          path: ./target/surefire-reports/
