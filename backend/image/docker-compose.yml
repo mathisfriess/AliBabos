@@ -1,0 +1,53 @@
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    networks:
+        - microservices-network
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  images-service:
+      build:
+          context: ../image
+          dockerfile: ../image/src/main/docker/Dockerfile
+      container_name: images-service
+      ports:
+          - "8082:8082"
+      environment:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://images-db:5432/${POSTGRES_DB:-images_db}
+          SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-user}
+          SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pass}
+          EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+          KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      depends_on:
+          minio:
+            condition: service_healthy
+      healthcheck:
+          test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 10s
+      networks:
+          - microservices-network
+
+networks:
+  microservices-network:
+    external: true
+    name: microservices-network
+
+volumes:
+  minio_data:
