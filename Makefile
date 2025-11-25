@@ -21,12 +21,20 @@ init-gateway: init-network
 stop-gateway:
 	docker rm -f $$(docker ps -q --filter ancestor=graphql-gateway) || true
 
-stop:
+init-image:
+	docker compose -f backend/image/docker-compose.yml up --build -d
+
+stop-image:
+	docker compose -f backend/media/docker-compose.yml down
+
+stop-infra:
 	docker compose -f infra/docker-compose.yml down
+
+stop: stop-image stop-infra
 
 remove: stop
 	docker network rm alibabos-network || true
 
-dev: init-infra
+dev: init-infra init-image
 
 stop-dev: stop remove
