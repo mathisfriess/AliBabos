@@ -31,6 +31,6 @@
     "**/*.mts",
     "src/app/(site)/create/page.tsx",
     "src/contexts/AuthContext.tsx"  
-  ],
+, "cypress/e2e/02-login.cy.js"  ],
   "exclude": ["node_modules"]
 }
