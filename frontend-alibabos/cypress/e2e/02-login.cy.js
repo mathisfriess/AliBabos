@@ -2,10 +2,11 @@ describe("Login page with Keycloak", () => {
   const keycloakOrigin = Cypress.env("keycloak_origin");
 
   beforeEach(() => {
-    cy.visit("/login");
+    cy.visit("/");
   });
 
   it("should allow a user to login via Keycloak", () => {
+    cy.get('button[id="get-started-button"]').click();
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("testuser@gmail.com");
       cy.get('input[name="password"]').type("TestPassword123!");
@@ -19,8 +20,7 @@ describe("Login page with Keycloak", () => {
   });
 
   it("should show an error for invalid credentials", () => {
-    cy.get("body").click("center");
-
+    cy.get('button[id="get-started-button"]').click();
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("wronguser");
       cy.get('input[name="password"]').type("wrongpass");

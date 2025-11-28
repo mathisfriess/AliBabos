@@ -2,8 +2,8 @@ describe("Logout functionality with Keycloak", () => {
   const keycloakOrigin = Cypress.env("keycloak_origin");
 
   beforeEach(() => {
-    cy.visit("/login");
-
+    cy.visit("/");
+    cy.get('button[id="get-started-button"]').click();
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("testuser@gmail.com");
       cy.get('input[name="password"]').type("TestPassword123!");

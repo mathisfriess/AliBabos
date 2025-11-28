@@ -1,10 +1,11 @@
 describe("Register page with Keycloak", () => {
   const keycloakOrigin = Cypress.env("keycloak_origin");
   beforeEach(() => {
-    cy.visit("/login");
+    cy.visit("/");
   });
 
   it("should allow a user to register via Keycloak", () => {
+    cy.get('button[id="get-started-button"]').click();
     cy.origin(keycloakOrigin, () => {
       cy.contains("Register").click();
       cy.get('input[name="email"]').type("testuser@gmail.com");
@@ -21,6 +22,8 @@ describe("Register page with Keycloak", () => {
   });
 
   it("should show validation errors for empty fields", () => {
+    cy.get('button[id="get-started-button"]').click();
+
     cy.origin(keycloakOrigin, () => {
       cy.contains("Register").click();
       cy.get('input[type="submit"]').click();
