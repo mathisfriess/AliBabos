@@ -35,13 +35,13 @@ jobs:
         run: npm run build
 
       - name: Start server
-        run: npm start &
+        run: HOST=localhost npm start &
 
       - name: Wait for server
         run: npx wait-on ${{ env.CYPRESS_BASE_URL }}
         env:
           CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
-                  
+
       - name: Run Cypress tests
         run: npm run test
         env:

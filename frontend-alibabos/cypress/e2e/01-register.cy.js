@@ -5,8 +5,6 @@ describe("Register page with Keycloak", () => {
   });
 
   it("should allow a user to register via Keycloak", () => {
-    cy.log(Cypress.env("keycloak_origin"));
-
     cy.origin(keycloakOrigin, () => {
       cy.contains("Register").click();
       cy.get('input[name="email"]').type("testuser@gmail.com");
