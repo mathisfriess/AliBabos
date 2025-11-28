@@ -36,3 +36,8 @@ jobs:
         
       - name: Run Cypress tests
         run: npm run test
+        env:
+          KEYCLOAK_CYPRESS_AUTH_BASE_URL: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_BASE_URL }}
+          KEYCLOAK_CYPRESS_AUTH_REALM: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_REALM }}
+          KEYCLOAK_CYPRESS_AUTH_CLIENT_ID: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_CLIENT_ID }}
+          CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
