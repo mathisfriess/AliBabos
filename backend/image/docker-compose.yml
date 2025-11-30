@@ -24,7 +24,7 @@ services:
   images-service:
       build:
           context: ../image
-          dockerfile: ../image/src/main/docker/Dockerfile
+          dockerfile: src/main/docker/Dockerfile
       container_name: images-service
       ports:
           - "8082:8082"

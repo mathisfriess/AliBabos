@@ -11,10 +11,10 @@ public class MinioConfig {
     @Value("${app.minio.endpoint}")
     private String endpoint;
 
-    @Value("${app.minio.access-key}")
+    @Value("${app.minio.root-user}")
     private String accessKey;
 
-    @Value("${app.minio.secret-key}")
+    @Value("${app.minio.root-password}")
     private String secretKey;
 
     @Bean
