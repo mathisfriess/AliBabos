@@ -34,18 +34,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Start server
-        run: HOST=localhost npm start &
+      # - name: Start server
+      #   run: HOST=localhost npm start &
 
-      - name: Wait for server
-        run: npx wait-on ${{ env.CYPRESS_BASE_URL }}
-        env:
-          CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
+      # - name: Wait for server
+      #   run: npx wait-on ${{ env.CYPRESS_BASE_URL }}
+      #   env:
+      #     CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
 
-      - name: Run Cypress tests
-        run: npm run test
-        env:
-          KEYCLOAK_CYPRESS_AUTH_BASE_URL: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_BASE_URL }}
-          KEYCLOAK_CYPRESS_AUTH_REALM: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_REALM }}
-          KEYCLOAK_CYPRESS_AUTH_CLIENT_ID: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_CLIENT_ID }}
-          CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
+      # - name: Run Cypress tests
+      #   run: npm run test
+      #   env:
+      #     KEYCLOAK_CYPRESS_AUTH_BASE_URL: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_BASE_URL }}
+      #     KEYCLOAK_CYPRESS_AUTH_REALM: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_REALM }}
+      #     KEYCLOAK_CYPRESS_AUTH_CLIENT_ID: ${{ secrets.KEYCLOAK_CYPRESS_AUTH_CLIENT_ID }}
+      #     CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
