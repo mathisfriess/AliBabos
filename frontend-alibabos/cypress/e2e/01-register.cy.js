@@ -6,6 +6,7 @@ describe("Register page with Keycloak", () => {
 
   it("should allow a user to register via Keycloak", () => {
     cy.get('button[id="get-started-button"]').click();
+    cy.url().should("include", keycloakOrigin);
     cy.origin(keycloakOrigin, () => {
       cy.contains("Register").click();
       cy.get('input[name="email"]').type("testuser@gmail.com");
@@ -23,6 +24,7 @@ describe("Register page with Keycloak", () => {
 
   it("should show validation errors for empty fields", () => {
     cy.get('button[id="get-started-button"]').click();
+    cy.url().should("include", keycloakOrigin);
 
     cy.origin(keycloakOrigin, () => {
       cy.contains("Register").click();

@@ -7,6 +7,8 @@ describe("Login page with Keycloak", () => {
 
   it("should allow a user to login via Keycloak", () => {
     cy.get('button[id="get-started-button"]').click();
+    cy.url().should("include", keycloakOrigin);
+
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("testuser@gmail.com");
       cy.get('input[name="password"]').type("TestPassword123!");
@@ -21,6 +23,8 @@ describe("Login page with Keycloak", () => {
 
   it("should show an error for invalid credentials", () => {
     cy.get('button[id="get-started-button"]').click();
+    cy.url().should("include", keycloakOrigin);
+
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("wronguser");
       cy.get('input[name="password"]').type("wrongpass");
