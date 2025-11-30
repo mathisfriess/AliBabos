@@ -7,7 +7,7 @@ describe("Logout functionality with Keycloak", () => {
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("testuser@gmail.com");
       cy.get('input[name="password"]').type("TestPassword123!");
-      cy.get('button[type="submit"]').click();
+      cy.get('input[name="login"]').click();
     });
     cy.url().should("eq", Cypress.config().baseUrl + "/profile");
   });

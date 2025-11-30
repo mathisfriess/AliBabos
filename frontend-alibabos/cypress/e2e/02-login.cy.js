@@ -10,7 +10,7 @@ describe("Login page with Keycloak", () => {
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("testuser@gmail.com");
       cy.get('input[name="password"]').type("TestPassword123!");
-      cy.get('button[type="submit"]').click();
+      cy.get('input[name="login"]').click();
     });
 
     cy.url().should("eq", Cypress.config().baseUrl + "/profile");
@@ -24,7 +24,7 @@ describe("Login page with Keycloak", () => {
     cy.origin(keycloakOrigin, () => {
       cy.get('input[name="username"]').type("wronguser");
       cy.get('input[name="password"]').type("wrongpass");
-      cy.get('button[type="submit"]').click();
+      cy.get('input[name="login"]').click();
 
       cy.contains("Invalid username or password").should("be.visible");
     });
