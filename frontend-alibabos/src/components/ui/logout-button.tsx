@@ -20,7 +20,7 @@ export const LogoutButton = forwardRef<HTMLButtonElement, LogoutButtonProps>(
     };
 
     return (
-      <Button ref={ref} onClick={handleClick} variant="outline" {...rest}>
+      <Button id="logout-button" ref={ref} onClick={handleClick} variant="outline" {...rest}>
         {label}
       </Button>
     );

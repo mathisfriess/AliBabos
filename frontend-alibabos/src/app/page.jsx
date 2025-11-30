@@ -51,6 +51,7 @@ function Home() {
             <Button
               onClick={handleLogin}
               className="bg-black hover:bg-black/90 text-white px-6 py-3 rounded-full shadow-lg"
+              id="get-started-button"
             >
               Start Building Free
               <svg

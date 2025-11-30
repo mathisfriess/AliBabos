@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useAuth } from "../../contexts/AuthContext";
 import { LogoutButton } from "@/components/ui/logout-button";
+import EditProfileButton from "./edit-profile-button";
 
 //TODO: Use a single component and apply login logic to switch between states
 
@@ -45,6 +46,7 @@ export function HeaderConnected() {
               </AvatarFallback>
             </Avatar>
           </Link>
+          <EditProfileButton />
           <LogoutButton />
         </nav>
       </div>
