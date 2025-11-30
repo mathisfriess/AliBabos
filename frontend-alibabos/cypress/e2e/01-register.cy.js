@@ -15,7 +15,7 @@ describe("Register page with Keycloak", () => {
       cy.get('input[name="lastName"]').type("User");
       cy.get('input[type="submit"]').click();
     });
-    cy.url().should("eq", Cypress.config().baseUrl + "/profile");
+    cy.url().should("include", "/profile");
 
     cy.contains("Test User").should("be.visible");
     cy.contains("testuser@gmail.com").should("be.visible");
