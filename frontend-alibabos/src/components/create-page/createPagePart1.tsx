@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import styles from "@/style/createPage.module.css";
 
 interface Template {
@@ -15,7 +16,6 @@ interface Step1Data {
   selectedTemplate: string | null;
   selectedTemplateName?: string;
   selectedTemplateCategory?: string;
-  // Add any other step 1 specific data
   extraInfo?: string;
 }
 
@@ -79,26 +79,12 @@ function Step1TemplateSelection({ onDataChange, initialData }: Step1Props) {
       selectedTemplate: templateId,
       selectedTemplateName: template?.name,
       selectedTemplateCategory: template?.category,
-      extraInfo: `Template selected at ${new Date().toLocaleTimeString()}`, // Dummy data for testing
+      extraInfo: `Template selected at ${new Date().toLocaleTimeString()}`,
     };
 
     // Send data up to parent component
     onDataChange(stepData);
   };
-
-  // Send initial data on mount if it exists
-  useEffect(() => {
-    if (initialData && initialData.selectedTemplate) {
-      const template = templates.find(
-        (t) => t.id === initialData.selectedTemplate
-      );
-      onDataChange({
-        ...initialData,
-        selectedTemplateName: template?.name,
-        selectedTemplateCategory: template?.category,
-      });
-    }
-  }, [initialData, onDataChange]);
 
   return (
     <section className={styles.templateSection}>
@@ -112,26 +98,31 @@ function Step1TemplateSelection({ onDataChange, initialData }: Step1Props) {
 
       <div className={styles.templateGrid}>
         {templates.map((template) => (
-          <article
+          <div
             key={template.id}
+            onClick={() => handleTemplateSelect(template.id)}
             className={`${styles.templateCard} ${
               selectedTemplate === template.id
                 ? styles.templateCardSelected
                 : ""
             }`}
-            onClick={() => handleTemplateSelect(template.id)}
           >
             <div className={styles.templateImage}>
-              <img src={template.imageUrl} alt={template.name} />
+              <Image
+                src={template.imageUrl}
+                alt={template.name}
+                width={302}
+                height={226}
+              />
               {template.isPopular && (
-                <span className={styles.popularBadge}>Popular</span>
+                <div className={styles.popularBadge}>Popular</div>
               )}
             </div>
             <div className={styles.templateInfo}>
               <h3 className={styles.templateName}>{template.name}</h3>
               <p className={styles.templateCategory}>{template.category}</p>
             </div>
-          </article>
+          </div>
         ))}
       </div>
 
@@ -139,7 +130,8 @@ function Step1TemplateSelection({ onDataChange, initialData }: Step1Props) {
       {selectedTemplate && (
         <div className="mt-4 p-3 bg-green-50 rounded-lg">
           <p className="text-sm text-green-700">
-            ✓ Selected: {templates.find((t) => t.id === selectedTemplate)?.name}
+            ✓ Template selected:{" "}
+            {templates.find((t) => t.id === selectedTemplate)?.name}
           </p>
         </div>
       )}

@@ -13,10 +13,15 @@ import { HeaderConnected } from "@/components/alibabos-ui/header";
 import styles from "@/style/createPage.module.css";
 import Step1TemplateSelection from "@/components/create-page/createPagePart1";
 import Step2WebsiteName from "@/components/create-page/createPagePart2";
+import Step3ContentManagement from "@/components/create-page/createPagePart3";
 import { AuthGuard } from "@/lib/checkAuth";
+import Step4Preview from "@/components/create-page/createPagePart4";
 
 interface Step1FormData {
   selectedTemplate: string | null;
+  selectedTemplateName?: string;
+  selectedTemplateCategory?: string;
+  extraInfo?: string;
 }
 
 interface Step2FormData {
@@ -26,22 +31,32 @@ interface Step2FormData {
   completedAt?: string;
 }
 
+interface ContentBlock {
+  id: string;
+  type: "text" | "image";
+  content: string;
+}
+
+interface ContentSection {
+  id: string;
+  layout: "single" | "split";
+  blocks: ContentBlock[];
+}
+
 interface Step3FormData {
-  customization: {
-    primaryColor: string;
-    secondaryColor: string;
-    font: string;
-  };
+  sections: ContentSection[];
+  selectedFont: string;
+  completedAt?: string;
 }
 
 interface Step4FormData {
-  // Adapt if needed later
   confirmed: boolean;
 }
 
 interface FormData {
   selectedTemplate: string | null;
   siteName: string;
+  sections: ContentSection[];
   customization: {
     primaryColor: string;
     secondaryColor: string;
@@ -66,6 +81,7 @@ function CreatePageTemplate() {
   const [formData, setFormData] = useState<FormData>({
     selectedTemplate: null,
     siteName: "",
+    sections: [],
     customization: {
       primaryColor: "#000000",
       secondaryColor: "#10b981",
@@ -77,7 +93,6 @@ function CreatePageTemplate() {
     step4Data: null,
   });
 
-  // Handler to receive data from child components
   type StepData = Step1FormData | Step2FormData | Step3FormData | Step4FormData;
   const handleStepDataChange = useCallback(
     (stepNumber: number, data: StepData) => {
@@ -91,15 +106,25 @@ function CreatePageTemplate() {
           siteName: (data as Step2FormData).websiteName,
         }),
         ...(stepNumber === 3 && {
+          sections: (data as Step3FormData).sections,
           customization: {
             ...prev.customization,
-            ...(data as Step3FormData).customization,
+            font: (data as Step3FormData).selectedFont,
           },
         }),
       }));
     },
     []
   );
+
+  const handlePublish = () => {
+    console.log("Publishing site...", {
+      template: formData.step1Data?.selectedTemplateName,
+      siteName: formData.siteName,
+      font: formData.customization.font,
+      sections: formData.sections,
+    });
+  };
 
   const handleNext = () => {
     if (currentStep < 4 && canProceedToNextStep()) {
@@ -120,9 +145,9 @@ function CreatePageTemplate() {
       case 2:
         return formData.siteName.trim() !== "";
       case 3:
-        return true; // Customization is optional
+        return true;
       case 4:
-        return false; // Last step
+        return false;
       default:
         return false;
     }
@@ -130,12 +155,10 @@ function CreatePageTemplate() {
 
   const handleSaveDraft = () => {
     console.log("Saving draft...", formData);
-    // TODO: Implement draft saving logic
   };
 
   const handleExit = () => {
     console.log("Exiting...");
-    // TODO: Implement exit logic
   };
 
   const progressPercentage = (currentStep / 4) * 100;
@@ -167,22 +190,37 @@ function CreatePageTemplate() {
         );
       case 3:
         return (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-medium text-gray-800 mb-4">
-              Step 3: Customize
-            </h2>
-            <p className="text-gray-500">Coming soon...</p>
-          </div>
+          <Step3ContentManagement
+            onDataChange={(data) => handleStepDataChange(3, data)}
+            initialData={formData.step3Data || undefined}
+          />
         );
+      // ...existing code...
       case 4:
+        const buildData = {
+          siteName: formData.siteName,
+          template: formData.step1Data
+            ? {
+                id: formData.step1Data.selectedTemplate || "",
+                name: formData.step1Data.selectedTemplateName || "",
+                category: formData.step1Data.selectedTemplateCategory,
+              }
+            : undefined,
+          fontFamily: formData.customization.font,
+          sections: formData.sections,
+          primaryColor: formData.customization.primaryColor,
+          secondaryColor: formData.customization.secondaryColor,
+        };
         return (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-medium text-gray-800 mb-4">
-              Step 4: Preview
-            </h2>
-            <p className="text-gray-500">Coming soon...</p>
-          </div>
+          <Step4Preview
+            templateName={formData.step1Data?.selectedTemplateName}
+            siteName={formData.siteName}
+            fontFamily={formData.customization.font}
+            buildData={buildData}
+            onPublish={handlePublish}
+          />
         );
+      // ...existing code...
       default:
         return null;
     }
@@ -191,10 +229,8 @@ function CreatePageTemplate() {
   return (
     <AuthGuard>
       <div className={styles.container}>
-        {/* Use existing header component */}
         <HeaderConnected />
 
-        {/* Progress Bar Section */}
         <section className={styles.progressBar}>
           <div className={styles.progressContent}>
             <div className={styles.progressHeader}>
@@ -214,7 +250,6 @@ function CreatePageTemplate() {
               </div>
             </div>
 
-            {/* Progress Bar */}
             <div className={styles.progressBarContainer}>
               <div
                 className={styles.progressBarFill}
@@ -222,7 +257,6 @@ function CreatePageTemplate() {
               />
             </div>
 
-            {/* Steps */}
             <nav className={styles.steps}>
               {steps.map((step, index) => (
                 <div key={step.id} className={styles.step}>
@@ -262,12 +296,10 @@ function CreatePageTemplate() {
           </div>
         </section>
 
-        {/* Main Content - Dynamic Step Rendering */}
         <main className={styles.mainContent}>
           <div className={styles.contentInner}>
             {renderCurrentStep()}
 
-            {/* Navigation Buttons */}
             <nav className={styles.navigationButtons}>
               <button
                 onClick={handlePrevious}
