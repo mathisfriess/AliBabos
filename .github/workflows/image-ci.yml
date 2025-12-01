@@ -1,0 +1,43 @@
+name: Image CI
+
+on:
+  push:
+    paths:
+      - 'backend/image/**'
+      - '.github/workflows/image-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/image/**'
+      - '.github/workflows/image-ci.yml'
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    working-directory: backend/image
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Spotless Lint code
+        run: mvn spotless:check
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and run tests
+        run: mvn -B clean verify
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-test-reports
+          path: ./target/surefire-reports/
