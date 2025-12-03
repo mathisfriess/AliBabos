@@ -16,4 +16,4 @@ spec:
         - name: eureka-server
           image: alibabos/eureka-server:latest
           ports:
-            - containerPort: 6443
+            - containerPort: 8761

@@ -11,7 +11,7 @@ defaults:
     working-directory: backend/eureka-server
 
 jobs:
-  build-and-test:
+  build-test-image:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,14 +31,27 @@ jobs:
       - name: Build and Test
         run: mvn -B clean verify
 
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: eureka-test-reports
-          path: ./target/surefire-reports/
+      - name: Build Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:latest
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Login DockerHub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+          | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:latest
 
   deploy:
-    needs: build-and-test
+    needs: build-test-image
     runs-on: ubuntu-latest
 
     steps:
@@ -54,7 +67,16 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Deploy Eureka
+      - name: Ensure manifests exist
         run: |
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
+
+      - name: Deploy with new image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          kubectl set image deployment/eureka-server \
+            eureka-server=${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG
+          kubectl rollout status deployment/eureka-server
+          kubectl delete pods -l app=eureka-server
+          kubectl rollout status deployment/eureka-server
