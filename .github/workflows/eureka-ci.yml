@@ -1,11 +1,7 @@
-name: Eureka Server CI
+name: Eureka Server CI/CD
 
 on:
   push:
-    paths:
-      - 'backend/eureka-server/**'
-      - '.github/workflows/eureka-ci.yml'
-  pull_request:
     paths:
       - 'backend/eureka-server/**'
       - '.github/workflows/eureka-ci.yml'
@@ -21,7 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Spotless Lint code
+
+      - name: Spotless Lint
         run: mvn spotless:check
 
       - name: Set up JDK
@@ -31,7 +28,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build and run tests
+      - name: Build and Test
         run: mvn -B clean verify
 
       - name: Upload test reports
@@ -39,3 +36,25 @@ jobs:
         with:
           name: eureka-test-reports
           path: ./target/surefire-reports/
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Load kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy Eureka
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml

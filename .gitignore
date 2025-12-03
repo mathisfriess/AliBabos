@@ -25,3 +25,6 @@ application.properties
 
 target/
 .mvn
+
+### config ### 
+config 
