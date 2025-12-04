@@ -22,6 +22,9 @@
 application.properties
 
 ### maven ###
-config
+
 target/
 .mvn
+
+### config ### 
+config 

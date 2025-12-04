@@ -12,5 +12,5 @@ ENV SPRING_PROFILES_ACTIVE=default
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:InitialRAMPercentage=50"
 COPY --from=build /workspace/app/target/*.jar /app/app.jar
 USER spring
-EXPOSE 8080
+EXPOSE 8761
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]

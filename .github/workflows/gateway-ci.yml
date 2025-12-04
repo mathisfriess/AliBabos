@@ -1,5 +1,4 @@
 name: Gateway Rest CI/CD
-
 on:
   push:
     paths:
