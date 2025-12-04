@@ -34,21 +34,19 @@ jobs:
       - name: Build Docker image
         run: |
           TAG=${GITHUB_SHA::7}
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:latest
-        env:
-          DOCKER_BUILDKIT: 1
+          docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG .
+          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:latest
 
       - name: Login DockerHub
         run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
-          | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
+          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
 
       - name: Push Docker image
         run: |
           TAG=${GITHUB_SHA::7}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:latest
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:latest
 
   deploy:
     needs: build-test-image
@@ -64,7 +62,7 @@ jobs:
       - name: Load kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Ensure manifests exist
@@ -72,11 +70,11 @@ jobs:
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
 
-      - name: Deploy with new image
+      - name: Deploy to Kubernetes
         run: |
           TAG=${GITHUB_SHA::7}
           kubectl set image deployment/eureka-server \
-            eureka-server=${{ secrets.DOCKERHUB_USERNAME }}/eureka-server:$TAG
+            eureka-server=${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG
           kubectl rollout status deployment/eureka-server
           kubectl delete pods -l app=eureka-server
           kubectl rollout status deployment/eureka-server
