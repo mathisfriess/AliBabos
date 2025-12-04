@@ -1,40 +1,74 @@
-.PHONY: dev, init-network, stop, remove
+# Variables pour les fichiers docker-compose
+INFRA_COMPOSE = infra/docker-compose.yml
+IMAGE_COMPOSE = backend/image/docker-compose.yml
+NETWORK_NAME = microservices-network
 
-init-network:
-	@docker network inspect alibabos-network >/dev/null 2>&1 || \
-		docker network create alibabos-network
+# Cibles non associées à des fichiers
+.PHONY: all up down stop ps logs clean build network up-infra up-image down-infra down-image
 
-init-infra: init-network
-	docker compose -f infra/docker-compose.yml up --build -d
+# Cible par défaut
+all: up
 
-init-eureka: init-network
-	docker build -t eureka-server ./backend/eureka-server
-	docker run -d --network alibabos-network -p 8761:8761
+# Crée le réseau Docker si il n'existe pas
+network:
+	@echo "Création du réseau Docker '$(NETWORK_NAME)'..."
+	@docker network create $(NETWORK_NAME) 2>/dev/null || echo "Le réseau '$(NETWORK_NAME)' existe déjà."
 
-stop-eureka:
-	docker rm -f $$(docker ps -q --filter ancestor=eureka-server) || true
+# Démarre tous les services
+up: network up-infra up-image
+	@echo "Tous les services sont démarrés."
 
-init-gateway: init-network
-	docker build -t graphql-gateway ./backend/graphql-gateway
-	docker run -d --network alibabos-network -p 8080:8080 graphql-gateway
+# Alias pour 'up'
+start: up
 
-stop-gateway:
-	docker rm -f $$(docker ps -q --filter ancestor=graphql-gateway) || true
+# Arrête tous les services
+down: down-infra down-image
+	@echo "Tous les services sont arrêtés."
 
-init-image:
-	docker compose -f backend/image/docker-compose.yml up --build -d
+# Alias pour 'down'
+stop: down
 
-stop-image:
-	docker compose -f backend/media/docker-compose.yml down
+# Démarre les services d'infrastructure
+up-infra: network
+	@echo "Démarrage des services d'infrastructure..."
+	@docker compose -f $(INFRA_COMPOSE) up -d
 
-stop-infra:
-	docker compose -f infra/docker-compose.yml down
+# Démarre les services liés aux images
+up-image: network
+	@echo "Démarrage des services d'images..."
+	@docker compose -f $(IMAGE_COMPOSE) up -d
 
-stop: stop-image stop-infra
+# Arrête les services d'infrastructure
+down-infra:
+	@echo "Arrêt des services d'infrastructure..."
+	@docker compose -f $(INFRA_COMPOSE) down
 
-remove: stop
-	docker network rm alibabos-network || true
+# Arrête les services liés aux images
+down-image:
+	@echo "Arrêt des services d'images..."
+	@docker compose -f $(IMAGE_COMPOSE) down
 
-dev: init-infra init-image
+# Reconstruit les images des services
+build:
+	@echo "Reconstruction des images..."
+	@docker compose -f $(INFRA_COMPOSE) build --no-cache
+	@docker compose -f $(IMAGE_COMPOSE) build --no-cache
 
-stop-dev: stop remove
+# Affiche le statut des conteneurs
+ps:
+	@echo "--- Statut des services d'infrastructure ---"
+	@docker compose -f $(INFRA_COMPOSE) ps
+	@echo "\n--- Statut des services d'images ---"
+	@docker compose -f $(IMAGE_COMPOSE) ps
+
+# Affiche les logs de tous les services
+logs:
+	@echo "Affichage des logs de tous les services..."
+	@docker compose -f $(INFRA_COMPOSE) logs -f & docker compose -f $(IMAGE_COMPOSE) logs -f
+
+# Nettoie l'environnement (arrête et supprime conteneurs, réseaux et volumes)
+clean:
+	@echo "Nettoyage de l'environnement Docker..."
+	@docker compose -f $(INFRA_COMPOSE) down -v
+	@docker compose -f $(IMAGE_COMPOSE) down -v
+	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "Le réseau '$(NETWORK_NAME)' a déjà été supprimé ou n'existait pas."
