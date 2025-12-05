@@ -81,8 +81,8 @@ jobs:
       # Étape 9 : Appliquer les manifests Kubernetes si nécessaire
       - name: Ensure manifests exist
         run: |
-          kubectl apply -f ../k8s/deployment.yml
-          kubectl apply -f ../k8s/service.yml
+          kubectl apply -f ../k8s/deployment.yaml
+          kubectl apply -f ../k8s/service.yaml
         # Crée ou met à jour les ressources Deployment et Service dans Kubernetes
 
       # Étape 10 : Déployer la nouvelle image sur le cluster
