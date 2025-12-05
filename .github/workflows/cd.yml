@@ -3,65 +3,99 @@ name: CD Frontend AliBabos to Kubernetes
 on:
   push:
     branches:
-      - staging/frontend
+      - staging/frontend   # Déclenche le workflow à chaque push sur la branche staging/frontend
+  pull_request:
+    branches:
+      - staging/frontend   # Déclenchement à chaque PR vers la branche staging/frontend
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # Utilise un runner Ubuntu
 
     defaults:
       run:
-        working-directory: frontend-alibabos
+        working-directory: frontend-alibabos   # Toutes les commandes sont exécutées depuis le dossier frontend-alibabos
 
     steps:
+      # Étape 1 : Récupérer le code source
       - name: Checkout code
         uses: actions/checkout@v3
+        # Clone le repository sur le runner pour accéder au code
 
+      # Étape 2 : Installer Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
+        # Installe Node.js version 20 pour pouvoir exécuter npm et build
 
+      # Étape 3 : Installer les dépendances
       - name: Install dependencies
         run: npm install
+        # Installe toutes les dépendances du projet
 
+      # Étape 4 : Build du projet
       - name: Build project
         run: npm run build
+        # Compile le frontend pour générer le bundle de production
 
+      # Étape 5 : Préparer Docker pour le build d'image
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
+        # Configure Docker Buildx pour les builds multiplateformes
 
+      # Étape 6 : Authentification Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+        # Permet de push l'image Docker sur Docker Hub
 
+      # Étape 7 : Build et push de l'image Docker
       - name: Build and push Docker image
         run: |
+          # Build de l'image avec tag immuable basé sur le commit SHA
           docker build \
             --build-arg NEXT_PUBLIC_KEYCLOAK_URL=${{ secrets.NEXT_PUBLIC_KEYCLOAK_URL }} \
             --build-arg NEXT_PUBLIC_KEYCLOAK_REALM=${{ secrets.NEXT_PUBLIC_KEYCLOAK_REALM }} \
             --build-arg NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=${{ secrets.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID }} \
             -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }} .
-          
-          docker build \
-            --build-arg NEXT_PUBLIC_KEYCLOAK_URL=${{ secrets.NEXT_PUBLIC_KEYCLOAK_URL }} \
-            --build-arg NEXT_PUBLIC_KEYCLOAK_REALM=${{ secrets.NEXT_PUBLIC_KEYCLOAK_REALM }} \
-            --build-arg NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=${{ secrets.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest .
 
+          # Tag "latest" pour pointer vers la dernière version
+          docker tag \
+            ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }} \
+            ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest
+
+          # Push des deux tags sur Docker Hub
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }}
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:latest
-          
+
+      # Étape 8 : Configurer kubectl pour accéder au cluster Kubernetes
       - name: Set up Kubeconfig
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" > $HOME/.kube/config
+        # Place le kubeconfig dans le répertoire home pour pouvoir exécuter les commandes kubectl
 
+      # Étape 9 : Appliquer les manifests Kubernetes si nécessaire
+      - name: Ensure manifests exist
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+        # Crée ou met à jour les ressources Deployment et Service dans Kubernetes
+
+      # Étape 10 : Déployer la nouvelle image sur le cluster
       - name: Deploy to Kubernetes
         run: |
+          # Met à jour l'image du Deployment avec le tag basé sur le commit
           kubectl set image deployment/frontend-alibabos frontend-alibabos=${{ secrets.DOCKER_USERNAME }}/frontend-alibabos:${{ github.sha }}
+
+          # Vérifie le rollout pour s'assurer que le Deployment est stable
           kubectl rollout status deployment/frontend-alibabos
+
+          # Supprime les pods existants pour forcer le redémarrage avec la nouvelle image
           kubectl delete pods -l app=frontend-alibabos
+
+          # Vérifie à nouveau le rollout pour s'assurer que tout est prêt
           kubectl rollout status deployment/frontend-alibabos
