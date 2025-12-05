@@ -1,0 +1,9 @@
+FROM quay.io/keycloak/keycloak:25.0.0
+
+ENV KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+ENV KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+
+EXPOSE 8080
+
+# Commande
+CMD ["start-dev", "--http-port=8080"]
