@@ -1,4 +1,4 @@
-package test.java.com.alibabos.gateway;
+package com.alibabos.gateway;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

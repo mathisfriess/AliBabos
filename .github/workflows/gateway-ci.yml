@@ -1,10 +1,7 @@
-name: Gateway Rest CI/CD
+name: Gateway REST CI/CD
+
 on:
   push:
-    paths:
-      - 'backend/gateway-rest/**'
-      - '.github/workflows/gateway-ci.yml'
-  pull_request:
     paths:
       - 'backend/gateway-rest/**'
       - '.github/workflows/gateway-ci.yml'
@@ -14,28 +11,71 @@ defaults:
     working-directory: backend/gateway-rest
 
 jobs:
-  build-and-test:
+  build-test-image:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Spotless Lint
+        run: mvn spotless:check
+
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Spotless check
-        run: mvn -B spotless:check
-
-      - name: Build and run tests
+      - name: Build and Test
         run: mvn -B clean verify
 
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: gateway-test-reports
-          path: target/surefire-reports/
+      - name: Build Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG .
+          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG \
+            ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:latest
+
+      - name: Login DockerHub
+        run: |
+          echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
+          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+
+      - name: Push Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:latest
+
+  deploy:
+    needs: build-test-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Load kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+
+      - name: Deploy Gateway REST
+        run: |
+          TAG=${GITHUB_SHA::7}
+          kubectl set image deployment/gateway-rest \
+            gateway-rest=${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG
+          kubectl rollout status deployment/gateway-rest
+          kubectl delete pods -l app=gateway-rest
+          kubectl rollout status deployment/gateway-rest
