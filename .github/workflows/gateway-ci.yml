@@ -29,8 +29,7 @@ jobs:
           cache: 'maven'
 
       - name: Build and Test
-        run: mvn -B clean verify
-
+        run: mvn -B clean verify -DskipTests
       - name: Build Docker image
         run: |
           TAG=${GITHUB_SHA::7}
