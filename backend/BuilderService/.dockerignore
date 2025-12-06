@@ -1,0 +1,7 @@
+target/
+.git/
+.gitignore
+.dockerignore
+HELP.md
+mvnw
+mvnw.cmd

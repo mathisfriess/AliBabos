@@ -1,4 +1,4 @@
-name: Builder microservice CI
+name: Builder microservice CI/CD
 
 on:
   push:
@@ -12,10 +12,10 @@ on:
 
 defaults:
   run:
-    working-directory: backend/BuilderServices
+    working-directory: backend/BuilderService
 
 jobs:
-  build-and-test:
+  build-test-image:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,8 +35,57 @@ jobs:
       - name: Build and run tests
         run: mvn -B clean verify
 
+      - name: Build Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG .
+          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG \
+            ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:latest
+
+      - name: Login DockerHub
+        run: |
+          echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
+          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+
+      - name: Push Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:latest
+
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: BuilderService-test-reports
           path: ./target/surefire-reports/
+
+  deploy:
+    needs: build-test-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Load kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f backend/BuilderService/k8s/deployment.yml
+          kubectl apply -f backend/BuilderService/k8s/service.yml
+
+      - name: Deploy BuilderService
+        run: |
+          TAG=${GITHUB_SHA::7}
+          kubectl set image deployment/builder-service \
+            builder-service=${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG
+          kubectl rollout status deployment/builder-service
+          kubectl delete pods -l app=builder-service
+          kubectl rollout status deployment/builder-service

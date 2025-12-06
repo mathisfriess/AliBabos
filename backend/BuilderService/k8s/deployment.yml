@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: builder-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: builder-service
+  template:
+    metadata:
+      labels:
+        app: builder-service
+    spec:
+      containers:
+        - name: builder-service
+          image: alibabos/builder-service:latest   # remplacé par kubectl set image en CI
+          ports:
+            - containerPort: 8080
