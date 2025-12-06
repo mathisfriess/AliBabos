@@ -8,15 +8,10 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class GatewayRoutesTests {
 
-  @Autowired
-  private WebTestClient webTestClient;
+  @Autowired private WebTestClient webTestClient;
 
   @Test
   void builderRouteIsConfigured() {
-    webTestClient.get()
-        .uri("/builder/health")
-        .exchange()
-        .expectStatus().is4xxClientError();
-
+    webTestClient.get().uri("/builder/health").exchange().expectStatus().is4xxClientError();
   }
 }
