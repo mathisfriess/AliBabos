@@ -1,0 +1,124 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 2,
+    "passes": 2,
+    "pending": 0,
+    "failures": 0,
+    "start": "2025-12-05T10:20:14.322Z",
+    "end": "2025-12-05T10:20:21.199Z",
+    "duration": 6877,
+    "testsRegistered": 2,
+    "passPercent": 100,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "deb9af05-acc1-4161-a80e-514567f57c20",
+      "title": "",
+      "fullFile": "cypress/e2e/01-register.cy.js",
+      "file": "cypress/e2e/01-register.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "79c112b8-103b-4528-a280-95d41101173a",
+          "title": "Register page with Keycloak",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "should allow a user to register via Keycloak",
+              "fullTitle": "Register page with Keycloak should allow a user to register via Keycloak",
+              "timedOut": null,
+              "duration": 5415,
+              "state": "passed",
+              "speed": "medium",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.get('button[id=\"get-started-button\"]').click();\ncy.location(\"href\", {\n  timeout: 20000\n}).should(url => {\n  expect(url).to.contain(keycloakOrigin);\n});\ncy.origin(keycloakOrigin, () => {\n  cy.contains(\"Register\").click();\n  cy.get('input[name=\"email\"]').type(\"testuser@gmail.com\");\n  cy.get('input[name=\"password\"]').type(\"TestPassword123!\");\n  cy.get('input[name=\"password-confirm\"]').type(\"TestPassword123!\");\n  cy.get('input[name=\"firstName\"]').type(\"Test\");\n  cy.get('input[name=\"lastName\"]').type(\"User\");\n  cy.get('input[type=\"submit\"]').click();\n});\ncy.url().should(\"include\", \"/profile\");\ncy.contains(\"Test User\").should(\"be.visible\");\ncy.contains(\"testuser@gmail.com\").should(\"be.visible\");",
+              "err": {},
+              "uuid": "ff47670a-bb70-4122-babf-85fff1658c9e",
+              "parentUUID": "79c112b8-103b-4528-a280-95d41101173a",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "should show validation errors for empty fields",
+              "fullTitle": "Register page with Keycloak should show validation errors for empty fields",
+              "timedOut": null,
+              "duration": 1434,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.get('button[id=\"get-started-button\"]').click();\ncy.location(\"href\", {\n  timeout: 20000\n}).should(url => {\n  expect(url).to.contain(keycloakOrigin);\n});\ncy.origin(keycloakOrigin, () => {\n  cy.contains(\"Register\").click();\n  cy.get('input[type=\"submit\"]').click();\n  cy.contains(\"Please specify email.\").should(\"be.visible\");\n  cy.contains(\"Please specify password.\").should(\"be.visible\");\n  cy.contains(\"Please specify this field.\").should(\"be.visible\");\n});",
+              "err": {},
+              "uuid": "7127a1a0-bc0b-4cfc-8bef-55fff77ca10e",
+              "parentUUID": "79c112b8-103b-4528-a280-95d41101173a",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "ff47670a-bb70-4122-babf-85fff1658c9e",
+            "7127a1a0-bc0b-4cfc-8bef-55fff77ca10e"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 6849,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.2.0"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": false,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.4"
+    },
+    "marge": {
+      "options": {
+        "reportDir": "reports/e2e",
+        "overwrite": false,
+        "html": false,
+        "json": true
+      },
+      "version": "6.3.2"
+    }
+  }
+}
