@@ -16,15 +16,12 @@ defaults:
     working-directory: backend/image
 
 jobs:
-  build-and-test:
+  build-test-image:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Spotless Lint code
-        run: mvn spotless:check
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -33,11 +30,64 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Spotless Lint code
+        run: mvn spotless:check
+
       - name: Build and run tests
         run: mvn -B clean verify
+
+      - name: Build Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker build -f src/main/docker/Dockerfile -t ${{ secrets.EUREKA_DOCKER_USER }}/image-service:$TAG .
+          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/image-service:$TAG \
+            ${{ secrets.EUREKA_DOCKER_USER }}/image-service:latest
+
+      - name: Login DockerHub
+        run: |
+          echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
+          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+
+      - name: Push Docker image
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/image-service:$TAG
+          docker push ${{ secrets.EUREKA_DOCKER_USER }}/image-service:latest
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: image-test-reports
-          path: ./target/surefire-reports/
+          path: backend/image/target/surefire-reports/
+
+  deploy:
+    needs: build-test-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Load kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply manifests
+        working-directory: backend/image
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+
+      - name: Deploy image-service
+        run: |
+          TAG=${GITHUB_SHA::7}
+          kubectl set image deployment/image-service \
+            image-service=${{ secrets.EUREKA_DOCKER_USER }}/image-service:$TAG
+          kubectl rollout status deployment/image-service
+          kubectl delete pods -l app=image-service
+          kubectl rollout status deployment/image-service
