@@ -78,8 +78,8 @@ jobs:
 
       - name: Apply manifests
         run: |
-          kubectl apply -f backend/BuilderService/k8s/deployment.yml
-          kubectl apply -f backend/BuilderService/k8s/service.yml
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
 
       - name: Deploy BuilderService
         run: |
