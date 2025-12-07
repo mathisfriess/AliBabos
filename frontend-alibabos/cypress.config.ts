@@ -20,6 +20,15 @@ function getKeycloakOrigin() {
 export default defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL,
+    video: true,
+    screenshotOnRunFailure: true,
+    reporter: "mochawesome",
+    reporterOptions: {
+      reportDir: "reports/e2e",
+      overwrite: false,
+      html: false,
+      json: true,
+    },
     setupNodeEvents(on, config) {
       config.env.keycloak_origin = getKeycloakOrigin();
       return config;
