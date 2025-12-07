@@ -3,24 +3,39 @@ name: Eureka Server CI/CD
 on:
   push:
     paths:
-      - 'backend/eureka-server/**'
-      - '.github/workflows/eureka-ci.yml'
+      - 'backend/eureka-server/**'           # Déclenche la CI/CD uniquement si du code Eureka est modifié
+      - '.github/workflows/eureka-ci.yml'    # Déclenche si le workflow lui-même est modifié
 
 defaults:
   run:
-    working-directory: backend/eureka-server
+    working-directory: backend/eureka-server  # Toutes les commandes s'exécutent depuis le dossier Eureka
 
 jobs:
+
+  # ============================================================
+  #  JOB 1 — BUILD + TEST + DOCKER IMAGE
+  # ============================================================
   build-test-image:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------
+      # Récupération du code GitHub
+      # ---------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # Vérification du formatage (Spotless)
+      # Stoppe la CI si le code n’est pas proprement formaté
+      # ---------------------------
       - name: Spotless Lint
         run: mvn spotless:check
 
+      # ---------------------------
+      # Installation du JDK 21 (Temurin)
+      # Utilisé pour compiler et exécuter les tests Maven
+      # ---------------------------
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -28,53 +43,106 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # ---------------------------
+      # Compilation + Tests Maven
+      # - clean : nettoie target/
+      # - verify : compile + lance les tests
+      # CI STOPPE si les tests échouent
+      # ---------------------------
       - name: Build and Test
         run: mvn -B clean verify
 
+      # ---------------------------
+      # Construction de l’image Docker
+      # - tag = 7 premiers chars du commit (immutable)
+      # - latest = tag roulant
+      # ---------------------------
       - name: Build Docker image
         run: |
-          TAG=${GITHUB_SHA::7}
+          TAG=${GITHUB_SHA::7}     # Tag versionné basé sur le commit
           docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG .
-          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:latest
+          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG \
+                     ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:latest
 
+      # ---------------------------
+      # Connexion sécurisée à DockerHub avec un secret GitHub
+      # ---------------------------
       - name: Login DockerHub
         run: |
           echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
-          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+            | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
 
+      # ---------------------------
+      # Push des images Docker versionnée + latest
+      # Ces images seront utilisées dans Kubernetes
+      # ---------------------------
       - name: Push Docker image
         run: |
           TAG=${GITHUB_SHA::7}
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:latest
 
+
+  # ============================================================
+  #  JOB 2 — DÉPLOIEMENT AUTOMATISÉ DANS KUBERNETES
+  # ============================================================
   deploy:
-    needs: build-test-image
+    needs: build-test-image    # Ce job démarre uniquement si le build+test a réussi
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------
+      # Récupération du repo pour obtenir les manifests K8s
+      # ---------------------------
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # Installation de kubectl (client CLI Kubernetes)
+      # ---------------------------
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
 
+      # ---------------------------
+      # Chargement du kubeconfig depuis un secret GitHub
+      # Ceci authentifie et configure l’accès au cluster
+      # ---------------------------
       - name: Load kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      # ---------------------------
+      # Application des manifests Kubernetes :
+      # - deployment.yml → définit le container et son image
+      # - service.yml → expose Eureka dans le cluster
+      # kubectl apply = create or update automatique
+      # ---------------------------
       - name: Ensure manifests exist
         run: |
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
 
+      # ---------------------------
+      # Mise à jour du Deployment K8s :
+      # - change uniquement l'image vers la version du commit
+      # - rollout status vérifie que Kubernetes déploie sans erreur
+      # - suppression des pods pour forcer la prise en compte du dernier tag
+      # ---------------------------
       - name: Deploy to Kubernetes
         run: |
           TAG=${GITHUB_SHA::7}
+
+          # Update de l'image du container dans le Deployment
           kubectl set image deployment/eureka-server \
             eureka-server=${{ secrets.EUREKA_DOCKER_USER }}/eureka-server:$TAG
+
+          # Attendre que le déploiement soit appliqué
           kubectl rollout status deployment/eureka-server
+
+          # Restart propre des pods Eureka pour forcer le rechargement complet
           kubectl delete pods -l app=eureka-server
+
+          # Vérifier que les pods redémarrent correctement
           kubectl rollout status deployment/eureka-server

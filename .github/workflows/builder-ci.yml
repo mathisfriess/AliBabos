@@ -3,8 +3,8 @@ name: Builder microservice CI/CD
 on:
   push:
     paths:
-      - 'backend/BuilderService/**'
-      - '.github/workflows/builder-ci.yml'
+      - 'backend/BuilderService/**'            # Déclenche la CI/CD si du code du BuilderService change
+      - '.github/workflows/builder-ci.yml'     # Déclenche si le workflow est modifié
   pull_request:
     paths:
       - 'backend/BuilderService/**'
@@ -12,19 +12,36 @@ on:
 
 defaults:
   run:
-    working-directory: backend/BuilderService
+    working-directory: backend/BuilderService   # Toutes les commandes s'exécutent dans ce microservice
+
 
 jobs:
+
+  # ============================================================
+  #  JOB 1 — BUILD + TEST + DOCKER IMAGE
+  # ============================================================
   build-test-image:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ---------------------------
+      # 1. On récupère le code source du dépôt
+      # ---------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # 2. Vérification du formatage avec Spotless
+      # Stoppe la CI si le code Java n’est pas formaté correctement
+      # ---------------------------
       - name: Spotless Lint code
         run: mvn spotless:check
 
+      # ---------------------------
+      # 3. Installation du JDK 21 (Temurin)
+      # Compatible Spring Boot 3 + Spring Cloud
+      # ---------------------------
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -32,60 +49,117 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # ---------------------------
+      # 4. Compilation et exécution des tests Maven
+      # 'verify' compile, teste et valide le packaging
+      # ---------------------------
       - name: Build and run tests
         run: mvn -B clean verify
 
+      # ---------------------------
+      # 5. Construction de l'image Docker BuilderService
+      # TAG = 7 premiers caractères du commit → traçabilité
+      # latest = image roulante
+      # ---------------------------
       - name: Build Docker image
         run: |
           TAG=${GITHUB_SHA::7}
           docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG .
-          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG \
-            ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:latest
+          docker tag  ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG \
+                      ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:latest
 
+      # ---------------------------
+      # 6. Connexion sécurisée à DockerHub
+      # via secrets GitHub encryptés
+      # ---------------------------
       - name: Login DockerHub
         run: |
           echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
-          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+            | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
 
+      # ---------------------------
+      # 7. Push de l'image Docker :
+      # - versionnée (rollback possible)
+      # - latest (image par défaut)
+      # ---------------------------
       - name: Push Docker image
         run: |
           TAG=${GITHUB_SHA::7}
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/builder-service:latest
 
+      # ---------------------------
+      # 8. Upload des rapports de tests Maven (diagnostic)
+      # Utile si un test échoue dans GitHub Actions
+      # ---------------------------
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: BuilderService-test-reports
           path: ./target/surefire-reports/
 
+
+  # ============================================================
+  #  JOB 2 — DÉPLOIEMENT KUBERNETES
+  # ============================================================
   deploy:
-    needs: build-test-image
+    needs: build-test-image       # Ne s’exécute que si la CI est successful
     runs-on: ubuntu-latest
 
     steps:
+
+      # ---------------------------
+      # 1. Récupération du repo pour appliquer les manifests K8s
+      # ---------------------------
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # 2. Installation de kubectl (CLI Kubernetes)
+      # ---------------------------
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
 
+      # ---------------------------
+      # 3. Chargement du kubeconfig
+      # Permet à GitHub Actions d'accéder au cluster OVH
+      # ---------------------------
       - name: Load kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      # ---------------------------
+      # 4. Application des manifests K8s :
+      # - deployment.yml : définit l'image, les réplicas, les labels
+      # - service.yml : expose le microservice dans le cluster
+      # kubectl apply = update automatique si déjà existant
+      # ---------------------------
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
 
+      # ---------------------------
+      # 5. Déploiement de la nouvelle image dans Kubernetes :
+      # - update uniquement l'image (set image)
+      # - rollout status : attend la fin du déploiement
+      # - delete pods : redémarre les pods pour appliquer l'image
+      # ---------------------------
       - name: Deploy BuilderService
         run: |
           TAG=${GITHUB_SHA::7}
+
+          # Met à jour l'image utilisée par le Deployment
           kubectl set image deployment/builder-service \
             builder-service=${{ secrets.EUREKA_DOCKER_USER }}/builder-service:$TAG
+
+          # Vérifie que Kubernetes applique le déploiement sans erreur
           kubectl rollout status deployment/builder-service
+
+          # Redémarre les pods pour forcer le rechargement complet de l'image
           kubectl delete pods -l app=builder-service
+
+          # Vérifie que les pods redémarrent correctement
           kubectl rollout status deployment/builder-service

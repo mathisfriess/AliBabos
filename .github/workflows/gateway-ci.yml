@@ -3,24 +3,40 @@ name: Gateway REST CI/CD
 on:
   push:
     paths:
-      - 'backend/gateway-rest/**'
-      - '.github/workflows/gateway-ci.yml'
+      - 'backend/gateway-rest/**'            # Déclenche le pipeline uniquement si des fichiers du Gateway REST changent
+      - '.github/workflows/gateway-ci.yml'    # Déclenche si le workflow est modifié
 
 defaults:
   run:
-    working-directory: backend/gateway-rest
+    working-directory: backend/gateway-rest   # Toutes les commandes s'exécutent dans le dossier du microservice
+
 
 jobs:
+
+  # ============================================================
+  #  JOB 1 — BUILD + TEST + DOCKER IMAGE
+  # ============================================================
   build-test-image:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------
+      # 1. Récupération du dépôt GitHub
+      # ---------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # 2. Vérification du formatage du code via Spotless
+      # Stoppe la CI si des fichiers ne respectent pas les règles
+      # ---------------------------
       - name: Spotless Lint
         run: mvn spotless:check
 
+      # ---------------------------
+      # 3. Installation du JDK 21 (Temurin)
+      # Utilisé par Spring Boot 3 / Spring Cloud Gateway
+      # ---------------------------
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -28,53 +44,107 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # ---------------------------
+      # 4. Compilation + Tests Maven
+      # -DskipTests : les tests WebFlux/Eureka sont sensibles → désactivés ici
+      # Si la compilation échoue, la CI s'arrête immédiatement
+      # ---------------------------
       - name: Build and Test
         run: mvn -B clean verify -DskipTests
+
+      # ---------------------------
+      # 5. Construction de l'image Docker
+      # TAG = 7 premiers caractères du commit → traçabilité parfaite
+      # latest = image roulante utilisée localement si besoin
+      # ---------------------------
       - name: Build Docker image
         run: |
-          TAG=${GITHUB_SHA::7}
+          TAG=${GITHUB_SHA::7}   # Génération d'un tag versionné unique
           docker build -t ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG .
-          docker tag ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG \
-            ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:latest
+          docker tag  ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG \
+                      ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:latest
 
+      # ---------------------------
+      # 6. Authentification DockerHub
+      # via secrets GitHub encryptés
+      # ---------------------------
       - name: Login DockerHub
         run: |
           echo "${{ secrets.EUREKA_DOCKER_TOKEN }}" \
-          | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
+            | docker login -u "${{ secrets.EUREKA_DOCKER_USER }}" --password-stdin
 
+      # ---------------------------
+      # 7. Push des images Docker :
+      # - versionnée (rollback possible)
+      # - latest (usage général)
+      # ---------------------------
       - name: Push Docker image
         run: |
           TAG=${GITHUB_SHA::7}
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG
           docker push ${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:latest
 
+
+  # ============================================================
+  #  JOB 2 — CONTINUOUS DEPLOYMENT KUBERNETES
+  # ============================================================
   deploy:
-    needs: build-test-image
+    needs: build-test-image       # S'exécute uniquement si toutes les étapes CI ont réussi
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------
+      # 1. Checkout du repo pour récupérer les manifests K8s
+      # ---------------------------
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # 2. Installation de kubectl
+      # pour interagir avec le cluster Kubernetes OVH
+      # ---------------------------
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
 
+      # ---------------------------
+      # 3. Chargement du kubeconfig sécurisé
+      # Permet de se connecter au cluster
+      # ---------------------------
       - name: Load kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      # ---------------------------
+      # 4. Application des manifests K8s :
+      # - crée le Deployment s’il n'existe pas
+      # - met à jour les modifications YAML
+      # ---------------------------
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
 
+      # ---------------------------
+      # 5. Déploiement de la nouvelle image dans Kubernetes
+      # - kubectl set image : met à jour uniquement l'image du pod
+      # - rollout status : attend que le déploiement soit réussi
+      # - delete pods : forçage du redémarrage des pods pour assurer la prise en compte de l'image
+      # ---------------------------
       - name: Deploy Gateway REST
         run: |
           TAG=${GITHUB_SHA::7}
+
+          # Met à jour l'image dans le Deployment
           kubectl set image deployment/gateway-rest \
             gateway-rest=${{ secrets.EUREKA_DOCKER_USER }}/gateway-rest:$TAG
+
+          # Attendre que Kubernetes effectue le rollout
           kubectl rollout status deployment/gateway-rest
+
+          # Supprime les anciens pods (pattern "drain + reboot")
           kubectl delete pods -l app=gateway-rest
+
+          # Vérifier que les pods redémarrent correctement
           kubectl rollout status deployment/gateway-rest
